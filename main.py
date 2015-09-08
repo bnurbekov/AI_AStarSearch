@@ -65,12 +65,6 @@ class PathFinder:
                             or (current_node[2] == Direction.SOUTH and current_node[1] == len(self.grid.grid)-1) \
                             or (current_node[2] == Direction.EAST and current_node[0] == len(self.grid.grid[0])-1)
 
-        a = current_node[2] == Direction.EAST
-        b = current_node[0] == len(self.grid.grid[0])-1
-        aa = current_node[0]
-        bb = len(self.grid.grid[0])-1
-        c = a and b
-
         # If can't move forward, check if turns are available
         if(cant_move_forward):
             if(current_action == Action.FORWARD):
@@ -79,8 +73,10 @@ class PathFinder:
 
         # Else, all moves are available
         else:
-            available_actions.append(Action.TURN_LEFT)
-            available_actions.append(Action.TURN_RIGHT)
+            if current_action != Action.BASH:
+                available_actions.append(Action.TURN_LEFT)
+                available_actions.append(Action.TURN_RIGHT)
+
             available_actions.append(Action.FORWARD)
             available_actions.append(Action.BASH)
 
