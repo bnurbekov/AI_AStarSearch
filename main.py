@@ -2,10 +2,25 @@
 
 __author__ = 'Batylan Nurbekov & Ari Goodman & Doruk Uzunoglu & Miguel Mora'
 
-import sys
-import re
-from Queue import PriorityQueue
-import math
+import sys, re, math, heapq
+
+#Class that implements priority queue.
+class PriorityQueue:
+    #Initializes priority queue
+    def __init__(self):
+        self.elements = []
+
+    #Checks if the queue is empty
+    def empty(self):
+        return len(self.elements) == 0
+
+    #Puts the item with the given priority into the priority queue
+    def put(self, item, priority):
+        heapq.heappush(self.elements, (priority, item))
+
+    #Pops the first item off the priority queue
+    def get(self):
+        return heapq.heappop(self.elements)[1]
 
 class Direction:
     WEST, SOUTH, EAST, NORTH = [x*math.pi/2 for x in range(-2, 2, 1)]
@@ -74,11 +89,11 @@ class PathFinder:
         if (node_value > 9):
             node_value = 1
 
-        if(move == Action.TURN_LEFT or Action.TURN_RIGHT):
-            node_value = math.ceil(node_value / 3)
+        if(move == Action.TURN_LEFT or move == Action.TURN_RIGHT):
+            node_value = int(math.ceil(node_value / 3.0))
         elif(move == Action.BASH):
             node_value = 3
-        # elif(move == Action.demolish):
+        # else(move == Action.demolish):
         #     node_value = 4
 
         return node_value
@@ -96,7 +111,7 @@ class PathFinder:
             elif(currentDir == Direction.WEST):
                 nextNode = (currentNode[0], currentNode[1], Direction.SOUTH)
             return nextNode
-        if move == Action.TURN_RIGHT:
+        elif move == Action.TURN_RIGHT:
             currentDir = currentNode[2]
             if(currentDir == Direction.NORTH):
                 nextNode = (currentNode[0], currentNode[1], Direction.EAST)
@@ -130,7 +145,7 @@ class PathFinder:
 
         #Debug
         print("X: %d, Y: %d, Dir: %f, Action that led to the state: %d, Frontier size: %d"
-              %(current_node[0], current_node[1], current_node[2], current_action if current_action != None else -1, self.frontier.qsize()))
+              %(current_node[0], current_node[1], current_node[2], current_action if current_action != None else -1, len(self.frontier.elements)))
 
         # #priority queue heap can contain duplicates
         # if current not in self.expanded:
