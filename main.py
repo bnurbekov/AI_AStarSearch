@@ -76,9 +76,9 @@ class PathFinder:
             if current_action != Action.BASH:
                 available_actions.append(Action.TURN_LEFT)
                 available_actions.append(Action.TURN_RIGHT)
+                available_actions.append(Action.BASH)
 
             available_actions.append(Action.FORWARD)
-            available_actions.append(Action.BASH)
 
         return available_actions
 
