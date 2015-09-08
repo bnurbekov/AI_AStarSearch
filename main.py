@@ -2,6 +2,8 @@
 
 __author__ = 'Batylan Nurbekov & Ari Goodman & Doruk Uzunoglu & Miguel Mora'
 
+DEBUG = 1
+
 import sys, re, math, heapq
 
 #Class that implements priority queue.
@@ -18,9 +20,13 @@ class PriorityQueue:
     def put(self, item, priority):
         heapq.heappush(self.elements, (priority, item))
 
-    #Pops the first item off the priority queue
+    #Gets the first item off the priority queue
     def get(self):
         return heapq.heappop(self.elements)[1]
+
+    #Pops the first tuple from the queue
+    def pop(self):
+        return heapq.heappop(self.elements)
 
 class Direction:
     WEST, SOUTH, EAST, NORTH = [x*math.pi/2 for x in range(-2, 2, 1)]
@@ -35,8 +41,22 @@ class Direction:
         return math.atan2(math.sin(angle), math.cos(angle))
 
 class Action:
-    FORWARD, BASH, TURN_LEFT, TURN_RIGHT = range(0, 4, 1)
+    FORWARD, BASH, TURN_LEFT, TURN_RIGHT, DEMOLISH = range(0, 5, 1)
 
+    @staticmethod
+    def getAction(action):
+        if action==Action.FORWARD:
+            return "Forward"
+        elif action==Action.BASH:
+            return "Bash"
+        elif action==Action.TURN_LEFT:
+            return "Turn Left"
+        elif action==Action.TURN_RIGHT:
+            return "Turn Right"
+        elif action==Action.DEMOLISH:
+            return "Demolish"
+        else:
+            return "None"
 
 #Class that implements path finding functionality
 class PathFinder:
@@ -54,6 +74,10 @@ class PathFinder:
         self.cost_so_far[self.start_state] = 0
         self.frontier.put(self.start_state, 0)
         self.grid = grid
+
+        #Statistics
+        self.expanded_num = 0
+        self.score = 0
 
     def getMoves(self, current_state):
         available_actions = []
@@ -145,8 +169,11 @@ class PathFinder:
         current_node = current_state[0]
         current_action = current_state[1]
 
+        self.expanded_num += 1
+
         #Debug
-        print("X: %d, Y: %d, Dir: %f, Action that led to the state: %d, Frontier size: %d"
+        if DEBUG:
+            print("X: %d, Y: %d, Dir: %f, Action that led to the state: %d, Frontier size: %d"
               %(current_node[0], current_node[1], current_node[2], current_action if current_action != None else -1, len(self.frontier.elements)))
 
         # #priority queue heap can contain duplicates
@@ -157,6 +184,7 @@ class PathFinder:
         #Goal test
         if current_node[0] == self.grid.goal[0] and current_node[1] == self.grid.goal[1]:
             self.goal_state = current_state
+            self.score = 100 - self.cost_so_far[current_state]
             return True
 
         for move in self.getMoves(current_state):
@@ -177,17 +205,34 @@ class PathFinder:
 
     #Finds path from goal to destination using internal parent list
     def findPath(self):
-        path = []
+        self.path = []
         current_state = self.goal_state
 
         while current_state != self.start_state:
-            path.append(current_state)
+            self.path.append(current_state)
             current_state = self.parent[current_state]
 
-        path.append(current_state)
-        path.reverse()
+        self.path.append(current_state)
+        self.path.reverse()
 
-        return path
+        return self.path
+
+    def printStats(self):
+        print "Score: %d" % self.score
+        print "Number of actions: %d" % len(self.path)
+        print "Number of nodes: %d" % self.expanded_num
+        self.printActions()
+
+    def printActions(self):
+        print "Actions: "
+        for state in self.path:
+            if DEBUG:
+                if state[1] is None:
+                    print("%s(%d) @(%d %d)")%("None", self.cost_so_far[state],state[0][0], state[0][1])
+                else:
+                    print("%s(%d) @(%d %d)")%(Action.getAction(state[1]), self.cost_so_far[state],state[0][0], state[0][1])
+            else:
+                print("%s(%d)")%(Action.getAction(state[1]), self.cost_so_far[state])
 
 class Grid:
     def __init__(self, filepath, heuristicNum):
@@ -210,7 +255,8 @@ class Grid:
             if 'G' in chars:
                 self.goal = (chars.index('G'), len(self.grid) - 1, None)
 
-        self.printBoard()
+        if DEBUG:
+            self.printBoard()
 
     #gets heuristic for the two states
     def getHeuristic(self, start, goal):
@@ -263,7 +309,7 @@ class Grid:
             for column in row:
                 sys.stdout.write(column + ' ')
             print ""
-        print "top left is 0,0"
+        print "Top left is 0,0"
         print "Start = %d %d %f" % (self.start[0], self.start[1], self.start[2])
         print "Goal = %d %d %f" % (self.goal[0], self.goal[1], self.start[2])
 
@@ -275,4 +321,6 @@ if __name__ == "__main__":
     while not pathFinder.runAStarIteration():
         pass
 
-    print pathFinder.findPath()
+    pathFinder.findPath()
+
+    pathFinder.printStats()
