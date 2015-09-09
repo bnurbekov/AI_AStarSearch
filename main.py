@@ -91,13 +91,14 @@ class PathFinder:
 
         # If can't move forward, check if turns are available
         if(cant_move_forward):
-            if(current_action == Action.FORWARD):
+            if(current_action != Action.BASH):
                 available_actions.append(Action.TURN_LEFT)
                 available_actions.append(Action.TURN_RIGHT)
 
         # Else, all moves are available
         else:
             if current_action != Action.BASH:
+                available_actions.append(Action.DEMOLISH)
                 available_actions.append(Action.TURN_LEFT)
                 available_actions.append(Action.TURN_RIGHT)
                 available_actions.append(Action.BASH)
@@ -106,21 +107,49 @@ class PathFinder:
 
         return available_actions
 
-    def getPathCost(self, state):
-        node = state[0]
-        move = state[1]
+    #Gets neighbors of the specific cell
+    def isNeighbor(self, nodeToCheckNeighborsOf, node):
+        (x, y, dir) = nodeToCheckNeighborsOf
+
+        for i in range(0, 3):
+            for j in range(0, 3):
+                neighborCell = (x - 1 + j, y - 1 + i)
+
+                if neighborCell[0] > 0 and neighborCell[0] < len(self.grid.grid[0]) and neighborCell[1] > 0 and neighborCell[1] < len(self.grid.grid):
+                    if self.grid.grid[neighborCell[1]][neighborCell[0]] == node:
+                        return True
+
+        return False
+
+    def getPathCost(self, next_state, current_state):
+        node = next_state[0]
+        move = next_state[1]
 
         node_value = ord(self.grid.grid[node[1]][node[0]]) - ord('0')
 
         if (node_value > 9):
             node_value = 1
 
+        temp_state = current_state
+        demolished_cells=[]
+
+        while temp_state != self.start_state:
+            if temp_state[1]==Action.DEMOLISH:
+                demolished_cells.append(temp_state[0])
+
+            temp_state = self.parent[temp_state]
+
+        for cell in demolished_cells:
+            if self.isNeighbor(cell, next_state[0]):
+                node_value = 3
+                break
+
         if(move == Action.TURN_LEFT or move == Action.TURN_RIGHT):
             node_value = int(math.ceil(node_value / 3.0))
         elif(move == Action.BASH):
             node_value = 3
-        # else(move == Action.demolish):
-        #     node_value = 4
+        elif(move == Action.DEMOLISH):
+            node_value = 4
 
         return node_value
 
@@ -136,7 +165,6 @@ class PathFinder:
                 nextNode = (currentNode[0], currentNode[1], Direction.NORTH)
             elif(currentDir == Direction.WEST):
                 nextNode = (currentNode[0], currentNode[1], Direction.SOUTH)
-            return nextNode
         elif move == Action.TURN_RIGHT:
             currentDir = currentNode[2]
             if(currentDir == Direction.NORTH):
@@ -147,7 +175,8 @@ class PathFinder:
                 nextNode = (currentNode[0], currentNode[1], Direction.SOUTH)
             elif(currentDir == Direction.WEST):
                 nextNode = (currentNode[0], currentNode[1], Direction.NORTH)
-            return nextNode
+        elif move == Action.DEMOLISH:
+            nextNode = currentNode
         else:
             currentDir = currentNode[2]
             if(currentDir == Direction.NORTH):
@@ -158,7 +187,8 @@ class PathFinder:
                 nextNode = (currentNode[0]+1, currentNode[1], currentDir)
             elif(currentDir == Direction.WEST):
                nextNode = (currentNode[0]-1, currentNode[1], currentDir)
-            return nextNode
+
+        return nextNode
 
     # Runs an iteration of A star. Returns true if the algorithm is done.
     def runAStarIteration(self):
@@ -191,7 +221,7 @@ class PathFinder:
             next_node = self.getNextNode(current_node, move)
             next_state = (next_node, move)
 
-            move_cost = self.cost_so_far[current_state] + self.getPathCost(next_state)
+            move_cost = self.cost_so_far[current_state] + self.getPathCost(next_state, current_state)
 
             if next_state not in self.cost_so_far or move_cost < self.cost_so_far[next_state]:
                 self.cost_so_far[next_state] = move_cost
