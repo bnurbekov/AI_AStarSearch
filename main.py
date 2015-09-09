@@ -2,7 +2,7 @@
 
 __author__ = 'Batylan Nurbekov & Ari Goodman & Doruk Uzunoglu & Miguel Mora'
 
-DEBUG = 1
+DEBUG = 0
 
 import sys, re, math, heapq
 
@@ -110,13 +110,14 @@ class PathFinder:
     #Gets neighbors of the specific cell
     def isNeighbor(self, nodeToCheckNeighborsOf, node):
         (x, y, dir) = nodeToCheckNeighborsOf
+        node = (node[0], node[1])
 
         for i in range(0, 3):
             for j in range(0, 3):
                 neighborCell = (x - 1 + j, y - 1 + i)
 
-                if neighborCell[0] > 0 and neighborCell[0] < len(self.grid.grid[0]) and neighborCell[1] > 0 and neighborCell[1] < len(self.grid.grid):
-                    if self.grid.grid[neighborCell[1]][neighborCell[0]] == node:
+                if neighborCell[0] >= 0 and neighborCell[0] < len(self.grid.grid[0]) and neighborCell[1] >= 0 and neighborCell[1] < len(self.grid.grid):
+                    if neighborCell == node:
                         return True
 
         return False
@@ -140,9 +141,14 @@ class PathFinder:
             temp_state = self.parent[temp_state]
 
         for cell in demolished_cells:
-            if self.isNeighbor(cell, next_state[0]):
-                node_value = 3
-                break
+            if (move == Action.TURN_RIGHT or move == Action.TURN_LEFT):
+                if cell == next_state[0]:
+                    node_value = 3
+                    break
+            else:
+                if self.isNeighbor(cell, next_state[0]):
+                    node_value = 3
+                    break
 
         if(move == Action.TURN_LEFT or move == Action.TURN_RIGHT):
             node_value = int(math.ceil(node_value / 3.0))
@@ -242,27 +248,23 @@ class PathFinder:
             self.path.append(current_state)
             current_state = self.parent[current_state]
 
-        self.path.append(current_state)
         self.path.reverse()
 
         return self.path
 
     def printStats(self):
-        print "Score: %d" % self.score
-        print "Number of actions: %d" % len(self.path)
-        print "Number of nodes: %d" % self.expanded_num
+        print "Score: %d\n" % self.score
+        print "Number of actions: %d\n" % len(self.path)
+        print "Number of nodes: %d\n" % self.expanded_num
         self.printActions()
 
     def printActions(self):
-        print "Actions: "
+        print "Actions:"
         for state in self.path:
             if DEBUG:
-                if state[1] is None:
-                    print("%s(%d) @(%d %d)")%("None", self.cost_so_far[state],state[0][0], state[0][1])
-                else:
-                    print("%s(%d) @(%d %d)")%(Action.getAction(state[1]), self.cost_so_far[state],state[0][0], state[0][1])
+                print "%s(%d) @(%d %d)" % (Action.getAction(state[1]), self.cost_so_far[state],state[0][0], state[0][1])
             else:
-                print("%s(%d)")%(Action.getAction(state[1]), self.cost_so_far[state])
+                print "%s" % (Action.getAction(state[1]))
 
 class Grid:
     def __init__(self, filepath, heuristicNum):
